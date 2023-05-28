@@ -1,3 +1,6 @@
+variable "lock_table_name" {}
+variable "state_bucket_name" {}
+
 terraform {
   required_providers {
     aws = {
@@ -7,13 +10,14 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "dartsly-cloud-tf-store"
-    key    = "dartsly-cloud-tf-store"
+    bucket = "dartsly-tf-store"
+    key    = "dartsly-tf-store"
     region = "eu-central-1"
-    dynamodb_table = "dartsly-cloud-tf-lock"
+    dynamodb_table = "dartsly-tf-lock"
     encrypt = true
   }
 }
+
 
 # Configure the AWS Provider
 provider "aws" {
@@ -28,9 +32,7 @@ provider "aws" {
 
 # bucket configuration
 resource "aws_s3_bucket" "tf-state-bucket-backend" {
-  bucket = "dartsly-cloud-tf-store"
-  tags = {
-  }
+  bucket = var.state_bucket_name
 }
 
 # enable versioning for the bucket
@@ -55,7 +57,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tf-state-bucket-e
 
 # DynamoDB Table for terraform locks
 resource "aws_dynamodb_table" "dynamodb-terraform-state-lock" {
-  name = "dartsly-cloud-tf-lock"
+  name = var.lock_table_name
   hash_key = "LockID"
   read_capacity = 2
   write_capacity = 2
