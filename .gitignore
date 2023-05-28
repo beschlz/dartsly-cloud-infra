@@ -1,0 +1,2 @@
+# dont commit the downloaded tf providers
+.terraform
