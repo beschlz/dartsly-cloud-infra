@@ -1,5 +1,4 @@
 
-
 resource "aws_vpc" "primary" {
     cidr_block           = "10.6.0.0/16"
     tags = {
