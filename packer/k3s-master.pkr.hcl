@@ -30,4 +30,16 @@ build {
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
+
+  provisioner "file" {
+    source      = "scripts/install_k3s_master.sh"
+    destination = "/tmp/install_k3s_master.sh"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "chmod +x /tmp/install_k3s_master.sh",
+      "/tmp/install_k3s_master.sh"
+    ]
+  }
 }

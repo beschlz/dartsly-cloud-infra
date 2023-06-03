@@ -11,7 +11,7 @@ on:
 jobs:            
     build_k3s_master_image:
         runs-on: ubuntu-latest
-        name: Build the EC2 Image for the k3s master
+        name: Build K3s Master Image
         environment: production
         defaults:
           run:
@@ -52,7 +52,7 @@ jobs:
           run: "packer build -var \"commit_hash=${{github.sha }}\" ./k3s-master.pkr.hcl"
     build_k3s_worker_image:
       runs-on: ubuntu-latest
-      name: Build the ec2 image for the k3s worker
+      name: Build K3s Worker Image
       environment: production
       defaults:
         run:
