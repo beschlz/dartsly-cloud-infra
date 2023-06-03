@@ -1,3 +1,5 @@
+variable "commit_hash" {}
+
 packer {
   required_plugins {
     amazon = {
@@ -8,12 +10,12 @@ packer {
 }
 
 source "amazon-ebs" "ubuntu" {
-  ami_name      = "learn-packer-linux-aws2"
-  instance_type = "t2.micro"
-  region        = "us-west-2"
+  ami_name      = "dartsly-k3s-master-${var.commit_hash}"
+  instance_type = "t4g.nano"
+  region        = "eu-central-1"
   source_ami_filter {
     filters = {
-      name                = "ubuntu/images/*ubuntu-xenial-16.04-amd64-server-*"
+      name                = "ubuntu/images/*ubuntu-jammy-22.04-arm64-server-*"
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
@@ -24,7 +26,7 @@ source "amazon-ebs" "ubuntu" {
 }
 
 build {
-  name    = "learn-packer"
+  name    = "dartsly-k3s-master-${var.commit_hash}"
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
