@@ -9,9 +9,9 @@ on:
         - main
 
 jobs:            
-    packer_build:
+    build_k3s_master_image:
         runs-on: ubuntu-latest
-        name: Build EC2 Image
+        name: Build the EC2 Image for the k3s master
         environment: production
         defaults:
           run:
@@ -50,10 +50,51 @@ jobs:
         - name: Build EC2 Image
           if: steps.filter.outputs.packer == 'true'
           run: "packer build -var \"commit_hash=${{github.sha }}\" ./k3s-master.pkr.hcl"
+    build_k3s_worker_image:
+      runs-on: ubuntu-latest
+      name: Build the ec2 image for the k3s worker
+      environment: production
+      defaults:
+        run:
+          working-directory: ./packer
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      outputs:
+        packer_has_changed: ${{ steps.filter.outputs.packer }}
+      steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+      - name: Setup Filter so that this jobs only runs, when ./packer was updated
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+              packer:
+                - 'packer/**'
+      - name: Setup Packer
+        if: steps.filter.outputs.packer == 'true'
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: "latest"
+      - name: Run `packer init`
+        if: steps.filter.outputs.packer == 'true'
+        id: init
+        run: "packer init ./k3s-node.pkr.hcl"
+      - name: Run `packer validate`
+        if: steps.filter.outputs.packer == 'true'
+        id: validate
+        run: "packer validate -var \"commit_hash=${{github.sha }}\" ./k3s-node.pkr.hcl"
+      - name: Build EC2 Image
+        if: steps.filter.outputs.packer == 'true'
+        run: "packer build -var \"commit_hash=${{github.sha }}\" ./k3s-node.pkr.hcl"
     terraform_deploy:
         runs-on: ubuntu-latest
         name: Deploy
-        needs: packer_build
+        needs: [build_k3s_master_image, build_k3s_worker_image]
         environment: production
         defaults:
           run:
