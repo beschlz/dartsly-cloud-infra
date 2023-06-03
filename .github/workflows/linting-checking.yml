@@ -1,0 +1,30 @@
+name: Linting
+
+on:
+    push:
+        branches:
+        - main
+    pull_request:
+        branches:
+        - main
+
+jobs:
+    terraform_format:
+        runs-on: ubuntu-latest
+        name: Format Terraform Code
+        steps:
+            - name: Checkout Project
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.ref }}
+            - name: Setup Terraform
+              uses:  hashicorp/setup-terraform@v2
+              with:
+                    terraform_version: 1.4.4
+                    terraform_wrapper: false
+            - name: Check if Terraform Code is properly formatted
+              run: |
+                terraform fmt -recursive -check | 
+                while IFS= read -r string; do
+                    echo "::warning file=./$string::is not formatted correctly"
+                done

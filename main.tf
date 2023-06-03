@@ -7,11 +7,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "dartsly-tf-store"
-    key    = "dartsly-tf-store"
-    region = "eu-central-1"
+    bucket         = "dartsly-tf-store"
+    key            = "dartsly-tf-store"
+    region         = "eu-central-1"
     dynamodb_table = "dartsly-tf-lock"
-    encrypt = true
+    encrypt        = true
   }
 }
 
@@ -28,9 +28,9 @@ provider "aws" {
 }
 
 module "backend-setup" {
-  source = "./modules/tf-backend-setup"
+  source            = "./modules/tf-backend-setup"
   state_bucket_name = "dartsly-tf-store"
-  lock_table_name  = "dartsly-tf-lock"
+  lock_table_name   = "dartsly-tf-lock"
 }
 
 module "k3s" {
