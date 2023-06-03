@@ -1,4 +1,4 @@
-name: Linting
+name: Linting and Checking of Infrastructure Code
 
 on:
     push:
@@ -9,9 +9,12 @@ on:
         - main
 
 jobs:
-    terraform_format:
+    terraform_code_checking:
         runs-on: ubuntu-latest
-        name: Format Terraform Code
+        name: Check Terraform Code Formatting
+        env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         steps:
             - name: Checkout Project
               uses: actions/checkout@v3
@@ -28,3 +31,12 @@ jobs:
                 while IFS= read -r string; do
                     echo "::warning file=./$string::is not formatted correctly"
                 done
+            - name: Terraform Init
+              run: terraform init
+            - name: Terraform Validate
+              run: terraform validate
+            - name: TfLint
+              run: |
+                curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+                tflint --resursive
+              
