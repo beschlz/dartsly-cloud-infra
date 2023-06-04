@@ -10,7 +10,7 @@ packer {
 }
 
 source "amazon-ebs" "ubuntu" {
-  ami_name      = "dartsly-k3s-master-${var.commit_hash}"
+  ami_name      = "dartsly-k3s-node-${var.commit_hash}"
   instance_type = "t4g.nano"
   region        = "eu-central-1"
   ssh_username = "ubuntu"
@@ -30,16 +30,4 @@ build {
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
-
-  provisioner "file" {
-    source      = "scripts/install_k3s_master.sh"
-    destination = "/tmp/install_k3s_master.sh"
-  }
-
-  provisioner "shell" {
-    inline = [
-      "chmod +x /tmp/install_k3s_master.sh",
-      "/tmp/install_k3s_master.sh"
-    ]
-  }
 }

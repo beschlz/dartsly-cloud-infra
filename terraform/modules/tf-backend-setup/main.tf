@@ -1,5 +1,21 @@
-variable "lock_table_name" {}
-variable "state_bucket_name" {}
+variable "lock_table_name" {
+  type = string
+}
+variable "state_bucket_name" {
+  type = string
+}
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+  required_version = "~> 1.4"
+}
+
+
 
 # bucket configuration
 resource "aws_s3_bucket" "tf-state-bucket-backend" {
@@ -40,11 +56,11 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tf-state-bucket-e
 
 # DynamoDB Table for terraform locks
 resource "aws_dynamodb_table" "dynamodb-terraform-state-lock" {
-  name = var.lock_table_name
-  hash_key = "LockID"
-  read_capacity = 2
+  name           = var.lock_table_name
+  hash_key       = "LockID"
+  read_capacity  = 2
   write_capacity = 2
- 
+
   attribute {
     name = "LockID"
     type = "S"
