@@ -13,6 +13,8 @@ First of all, kubernetes is great! But yes, severless would be a great option fo
 Stuff that i would like to try out with this cluster is:
 * A fully GitOps driven workflow on Kubernetes and AWS
 * Especially using ArgoCD and using a service mesh (Linkerd or Istio, haven`t setteld there yet)
+* Vault for Secrets Management
+* Zitadel, i`ve used Keycloak quite a bit and wanted to try an alternative
 
 ## 📁 Repo Organization
 
