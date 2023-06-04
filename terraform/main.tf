@@ -13,6 +13,8 @@ terraform {
     dynamodb_table = "dartsly-tf-lock"
     encrypt        = true
   }
+
+  required_version = "~> 1.4"
 }
 
 

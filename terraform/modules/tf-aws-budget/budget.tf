@@ -1,3 +1,14 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+  required_version = "~> 1.4"
+}
+
+
 resource "aws_budgets_budget" "dartsly-budget" {
   name         = "dartsly-budget"
   budget_type  = "COST"
