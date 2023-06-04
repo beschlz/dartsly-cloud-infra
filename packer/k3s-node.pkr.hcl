@@ -11,7 +11,7 @@ packer {
 
 source "amazon-ebs" "ubuntu" {
   ami_name      = "dartsly-k3s-node-${var.commit_hash}"
-  instance_type = "t4g.nano"
+  instance_type = "t4g.small"
   region        = "eu-central-1"
   ssh_username = "ubuntu"
   source_ami_filter {

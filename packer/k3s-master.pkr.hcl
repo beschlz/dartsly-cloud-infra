@@ -11,7 +11,7 @@ packer {
 
 source "amazon-ebs" "ubuntu" {
   ami_name      = "dartsly-k3s-master-${var.commit_hash}"
-  instance_type = "t4g.nano"
+  instance_type = "t4g.small"
   region        = "eu-central-1"
   ssh_username = "ubuntu"
   source_ami_filter {
@@ -30,6 +30,13 @@ build {
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
+
+  provisioner "shell" {
+    inline = [
+      "sudo apt update -y && sudo apt upgrade -y",
+      "sudo reboot now"
+    ]
+  }
 
   provisioner "file" {
     source      = "scripts/install_k3s_master.sh"
