@@ -17,8 +17,6 @@ terraform {
   required_version = "~> 1.4"
 }
 
-
-# Configure the AWS Provider
 provider "aws" {
   region = "eu-central-1"
 
@@ -30,11 +28,11 @@ provider "aws" {
 }
 
 module "backend-setup" {
-  source            = "./modules/tf-backend-setup"
+  source            = "./_modules/tf-backend-setup"
   state_bucket_name = "dartsly-tf-store"
   lock_table_name   = "dartsly-tf-lock"
 }
 
-module "k3s" {
-  source = "./modules/tf-k3s"
+module "k3s-cluster" {
+  source = "./_modules/k3s-cluster"
 }
