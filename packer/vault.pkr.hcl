@@ -10,10 +10,10 @@ packer {
 }
 
 source "amazon-ebs" "ubuntu" {
-  ami_name      = "dartsly-k3s-master-${var.commit_hash}"
+  ami_name      = "dartsly-k3s-node-${var.commit_hash}"
   instance_type = "t4g.small"
   region        = "eu-central-1"
-  ssh_username  = "ubuntu"
+  ssh_username = "ubuntu"
   source_ami_filter {
     filters = {
       name                = "ubuntu/images/*ubuntu-jammy-22.04-arm64-server-*"
@@ -25,27 +25,29 @@ source "amazon-ebs" "ubuntu" {
   }
 }
 
+
 build {
-  name = "dartsly-k3s-master-${var.commit_hash}"
+  name    = "dartsly-vault-${var.commit_hash}"
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
 
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get update -y",
-      "sudo apt-get upgrade -y",
-      "sudo reboot now"
-    ]
+    provisioner "shell" {
+        inline = [
+        "sudo apt-get update -y",
+        "sudo apt-get upgrade -y",
+        "sudo reboot now",
+        "sudo apt install -y gpg"
+        ]
 
-    expect_disconnect = true
-  }
+        expect_disconnect = true
+    }
 
-  provisioner "shell" {
-    inline = [
-      "curl -sfL https://get.k3s.io | sh -",
-      "sudo cat /etc/rancher/k3s/k3s.yaml"
-    ]
-  }
+    provisioner "shell" {
+        inline = [
+            "sudo install -y vault"
+        ]
+    }
 
 }
+
