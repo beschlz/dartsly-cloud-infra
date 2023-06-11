@@ -17,6 +17,7 @@ resource "aws_route53_record" "k3s-route53-record" {
 resource "aws_acm_certificate" "dartsly-certificate" {
   domain_name       = var.domain_name
   validation_method = "DNS"
+  subject_alternative_names = ["www.${var.domain_name}"]
 }
 
 resource "aws_acm_certificate_validation" "cert-validation" {
