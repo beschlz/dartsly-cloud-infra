@@ -1,146 +1,62 @@
-name: 'Build VM Images'
+name: "Build VM Images"
 
 on:
-    push:
-        branches:
-        - main
-    pull_request:
-        branches:
-        - main
-    schedule:
-        - cron: "0 0 * * *"
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
-    build_k3s_master_image:
-        runs-on: ubuntu-latest
-        name: Build K3s Master Image
-        environment: production
-        defaults:
-          run:
-            working-directory: ./packer
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        outputs:
-          packer_has_changed: ${{ steps.filter.outputs.packer }}
-          
-        steps:
-        - name: Checkout Project
-          uses: actions/checkout@v3
-          with:
-            ref: ${{ github.ref }}
-
-        - name: Setup Filter so that this jobs only runs, when ./packer was updated
-          uses: dorny/paths-filter@v2
-          id: filter
-          with:
-            filters: |
-                packer:
-                  - 'packer/**'
-
-        - name: Setup Packer
-          if: steps.filter.outputs.packer == 'true'
-          uses: hashicorp/setup-packer@main
-          id: setup
-          with:
-            version: "latest"
-            
-        - name: Run `packer init`
-          if: steps.filter.outputs.packer == 'true'
-          id: init
-          run: "packer init ./k3s-master.pkr.hcl"
-
-        - name: Run `packer validate`
-          if: steps.filter.outputs.packer == 'true'
-          id: validate
-          run: "packer validate -var \"commit_hash=${{github.sha }}\" ./k3s-master.pkr.hcl"
-
-        - name: Build EC2 Image
-          if: steps.filter.outputs.packer == 'true'
-          run: "packer build -var \"commit_hash=${{github.sha }}\" ./k3s-master.pkr.hcl"
-
-    build_k3s_worker_image:
-      runs-on: ubuntu-latest
-      name: Build K3s Worker Image
-      environment: production
-      defaults:
-        run:
-          working-directory: ./packer
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      outputs:
-        packer_has_changed: ${{ steps.filter.outputs.packer }}
-      steps:
+  build_images:
+    runs-on: ubuntu-latest
+    name: Build K3s Master Image
+    environment: production
+    defaults:
+      run:
+        working-directory: ./packer
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    outputs:
+      packer_has_changed: ${{ steps.filter.outputs.packer }}
+    strategy:
+      matrix:
+        image: [k3s-master.pkr.hcl, k3s-node.pkr.hcl, vault.pkr.hcl]
+    steps:
       - name: Checkout Project
         uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
+
       - name: Setup Filter so that this jobs only runs, when ./packer was updated
         uses: dorny/paths-filter@v2
         id: filter
         with:
           filters: |
-              packer:
-                - 'packer/**'
+            packer:
+              - 'packer/**'
+
       - name: Setup Packer
         if: steps.filter.outputs.packer == 'true'
         uses: hashicorp/setup-packer@main
         id: setup
         with:
           version: "latest"
+
       - name: Run `packer init`
         if: steps.filter.outputs.packer == 'true'
         id: init
-        run: "packer init ./k3s-node.pkr.hcl"
+        run: "packer init ./${{ matrix.image }}"
+
       - name: Run `packer validate`
         if: steps.filter.outputs.packer == 'true'
         id: validate
-        run: "packer validate -var \"commit_hash=${{github.sha }}\" ./k3s-node.pkr.hcl"
+        run: 'packer validate -var "commit_hash=${{github.sha }}" ./k3s-master.pkr.hcl'
+
       - name: Build EC2 Image
         if: steps.filter.outputs.packer == 'true'
-        run: "packer build -var \"commit_hash=${{github.sha }}\" ./k3s-node.pkr.hcl"
-
-    build_vault_image:
-        runs-on: ubuntu-latest
-        name: Build Vault Image
-        environment: production
-        defaults:
-          run:
-            working-directory: ./packer
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        outputs:
-          packer_has_changed: ${{ steps.filter.outputs.packer }}
-        steps:
-            - name: Checkout Project
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.ref }}
-            - name: Setup Filter so that this jobs only runs, when ./packer was updated
-              uses: dorny/paths-filter@v2
-              id: filter
-              with:
-                filters: |
-                    packer:
-                      - 'packer/**'
-            - name: Setup Packer
-              if: steps.filter.outputs.packer == 'true'
-              uses: hashicorp/setup-packer@main
-              id: setup
-              with:
-                version: "latest"
-            - name: Run `packer init`
-              if: steps.filter.outputs.packer == 'true'
-              id: init
-              run: "packer init ./vault.pkr.hcl"
-            - name: Run `packer validate`
-              if: steps.filter.outputs.packer == 'true'
-              id: validate
-              run: "packer validate -var \"commit_hash=${{github.sha }}\" ./vault.pkr.hcl"
-            - name: Build EC2 Image
-              if: steps.filter.outputs.packer == 'true'
-              run: "packer build -var \"commit_hash=${{github.sha }}\" ./vault.pkr.hcl"
-
-        
+        run: 'packer build -var "commit_hash=${{github.sha }}" ./k3s-master.pkr.hcl'
