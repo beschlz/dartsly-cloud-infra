@@ -1,38 +1,75 @@
-name: 'Deploy Environment in AWS'
+name: "Build & Deploy Environment in AWS"
 
 on:
-    push:
-        branches:
-        - main
-    pull_request:
-        branches:
-        - main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-jobs:            
-    terraform_deploy:
-        runs-on: ubuntu-latest
-        name: Deploy
-        environment: production
-        defaults:
-          run:
-            working-directory: ./terraform
-        env:
-            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        steps:
-        - name: Checkout Project
-          uses: actions/checkout@v3
-          with:
-            ref: ${{ github.ref }}
-        - name: Setup Terraform
-          uses:  hashicorp/setup-terraform@v2
-          with:
-                terraform_version: 1.4.4
-                terraform_wrapper: false
-        - name: Terraform Init
-          id : init
-          run: terraform init
-        - name: Terraform Apply
-          if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-          id: apply
-          run: terraform apply -auto-approve
+jobs:
+  build_images:
+    runs-on: ubuntu-latest
+    name: Build VM Images
+    environment: production
+    defaults:
+      run:
+        working-directory: ./packer
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    strategy:
+      matrix:
+        image: [k3s-master.pkr.hcl, k3s-node.pkr.hcl, vault.pkr.hcl]
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: "latest"
+
+      - name: Run `packer init`
+        id: init
+        run: "packer init ./${{ matrix.image }}"
+
+      - name: Run `packer validate`
+        id: validate
+        run: 'packer validate -var "commit_hash=${{github.sha }}" ./${{ matrix.image }}'
+
+      - name: Build EC2 Image
+        run: 'packer build -var "commit_hash=${{github.sha }}" ./${{ matrix.image }}'
+
+  terraform_deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    needs: [ build_images ]
+    environment: production
+    defaults:
+      run:
+        working-directory: ./terraform
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.4.4
+          terraform_wrapper: false
+      - name: Terraform Init
+        id: init
+        run: terraform init
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: apply
+        run: terraform apply -auto-approve
